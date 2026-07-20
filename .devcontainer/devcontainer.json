@@ -1,0 +1,28 @@
+{
+  "name": "Retrace VS Code Demo",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "demo",
+  "workspaceFolder": "/app",
+  "shutdownAction": "stopCompose",
+  "postCreateCommand": "chmod +x /app/debug-recording/*.retrace && python /app/scripts/verify_debugger.py --environment",
+  "hostRequirements": {
+    "cpus": 2,
+    "memory": "4gb",
+    "storage": "2gb"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "RetraceSoftware.retrace-debug-extension",
+        "ms-python.python"
+      ],
+      "settings": {
+        "remote.extensionKind": {
+          "RetraceSoftware.retrace-debug-extension": [
+            "workspace"
+          ]
+        }
+      }
+    }
+  }
+}

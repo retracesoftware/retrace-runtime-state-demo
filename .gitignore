@@ -1,0 +1,11 @@
+.env
+recordings/*
+!recordings/.gitkeep
+reports/*
+!reports/.gitkeep
+runtime-state/*
+!runtime-state/.gitkeep
+debug-recording/*.d/
+__pycache__/
+.pytest_cache/
+.venv/

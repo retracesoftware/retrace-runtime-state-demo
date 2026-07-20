@@ -1,0 +1,5 @@
+retracesoftware==0.2.25
+retracesoftware-dap==0.2.25
+pytest==9.0.2
+pytest-env==1.6.0
+requests==2.32.5

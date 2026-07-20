@@ -1,0 +1,12 @@
+.git
+.github
+.venv
+.pytest_cache
+**/__pycache__
+**/*.pyc
+recordings
+reports
+runtime-state
+debug-recording
+debug-report
+example-reports

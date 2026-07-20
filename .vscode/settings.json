@@ -1,0 +1,5 @@
+{
+  "python.defaultInterpreterPath": "/usr/local/bin/python",
+  "retrace.recording": "/app/debug-recording/runtime-state.retrace",
+  "terminal.integrated.cwd": "/app"
+}

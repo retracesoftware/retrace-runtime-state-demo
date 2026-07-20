@@ -1,0 +1,15 @@
+services:
+  demo:
+    platform: linux/amd64
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    command: ["sleep", "infinity"]
+    init: true
+    working_dir: /app
+    environment:
+      PYTHONPATH: /app
+    volumes:
+      - ..:/app:cached
+    mem_limit: 2g
+    cpus: 2.0

@@ -1,0 +1,11 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Retrace: verify runtime-state recording",
+      "type": "shell",
+      "command": "python /app/scripts/verify_debugger.py --all",
+      "problemMatcher": []
+    }
+  ]
+}

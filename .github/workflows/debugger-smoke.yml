@@ -1,0 +1,24 @@
+name: Debugger recording smoke test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-debugger-recording:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build debugger container
+        run: docker compose -p retrace-runtime-state-debugger -f .devcontainer/docker-compose.yml build
+      - name: Verify replay and DAP inspection
+        run: docker compose -p retrace-runtime-state-debugger -f .devcontainer/docker-compose.yml run --rm demo python /app/scripts/verify_debugger.py --all
+      - name: Clean up
+        if: always()
+        run: docker compose -p retrace-runtime-state-debugger -f .devcontainer/docker-compose.yml down -v --remove-orphans
