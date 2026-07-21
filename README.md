@@ -38,17 +38,49 @@ again.
 
 ## Requirements
 
+- Git
 - Docker Desktop or Docker Engine with Docker Compose
 - Internet access for hosted AI report generation
-- VS Code with the Dev Containers extension for visual replay debugging
+- VS Code for reading the report and visual replay debugging
+- The VS Code Dev Containers extension for visual replay debugging
 
 The demo runs on macOS and Linux hosts supported by Docker.
+
+Start Docker and wait until it reports that the engine is running. Install the
+Dev Containers extension with:
+
+```bash
+code --install-extension ms-vscode-remote.remote-containers
+```
+
+If `code` is not available in a macOS terminal, open VS Code, run
+**Shell Command: Install 'code' command in PATH** from the Command Palette,
+and then open a new terminal.
+
+You do not need Python, Retrace, SQL Server, or an API key installed on the
+host. Docker supplies the Python and Retrace environment, and the default
+hosted AI allowance is requested automatically.
 
 ## Get The Demo
 
 ```bash
 git clone https://github.com/retracesoftware/retrace-runtime-state-demo.git
 cd retrace-runtime-state-demo
+```
+
+Confirm that you are in the repository and starting from its unmodified
+`main` branch:
+
+```bash
+pwd
+git status
+```
+
+The Git status should include:
+
+```text
+On branch main
+nothing to commit, working tree clean
 ```
 
 ## Part 1: Generate A Fresh Trace And AI Bug Report
@@ -125,6 +157,18 @@ investigate it.
 The overall demo succeeds only after the expected target failure has been
 replayed, diagnosed, reported, and validated.
 
+Near the end of a successful run, look for:
+
+```text
+Report quality validation passed.
+Replay reproduced the runtime failure without another API request.
+Runtime-state demo succeeded.
+Live API requests across record, AI replay, and direct replay: 1
+```
+
+The exact batch, order, customer, quantity, and financial values are expected
+to change on each new live run.
+
 ### Generated artifacts
 
 The current run produces:
@@ -143,6 +187,28 @@ The most useful file to read is:
 
 ```text
 reports/runtime-bug-report.md
+```
+
+Confirm that the recording, readable report, and captured payload all exist
+and are nonempty:
+
+```bash
+ls -lh recordings/runtime-incident.retrace
+ls -lh reports/runtime-bug-report.md
+ls -lh reports/runtime-payload.json
+```
+
+These files contain:
+
+```text
+recordings/runtime-incident.retrace
+    The Retrace recording of the failed pytest execution.
+
+reports/runtime-bug-report.md
+    The readable AI-generated diagnosis.
+
+reports/runtime-payload.json
+    The original live API data used by this execution.
 ```
 
 Open it with:
@@ -182,6 +248,17 @@ A successful report identifies:
 
 It should not silently recommend numeric zero unless the application owner has
 defined that business meaning.
+
+To verify manually that the report describes this exact run, display the
+captured payload and the report's verified debugger evidence:
+
+```bash
+cat reports/runtime-payload.json
+grep -A4 "Verified DAP Runtime State" reports/runtime-bug-report.md
+```
+
+The batch ID, order ID, customer ID, and numeric values must match. This proves
+that the report came from the fresh recording rather than a checked-in answer.
 
 ### Replay the trace again
 
@@ -290,8 +367,24 @@ In VS Code:
 2. Find the recorded Python process, shown as `python (PID ...)`.
 3. Click play beside that process.
 4. Wait for breakpoint scanning to complete.
-5. Retrace first pauses at an entry stop. Press **Continue** once.
+5. Retrace first pauses at an entry stop. Press `F5` or **Continue** once. Do
+   not use Step Into until the source breakpoint has been reached.
 6. Replay stops at the breakpoint on line 31.
+
+The Debug Console should show messages similar to:
+
+```text
+breakpoint scan[1]: complete, 2 hits found
+handleContinue: cursor=false ...
+handleContinue: ok=true hitMsgIdx=...
+```
+
+An initial `stackTrace: no active cursor` message means replay has not moved
+from the entry stop to an inspectable historical position yet. If pressing
+Continue produces no `handleContinue` message, stop the debug session with
+`Shift+F5`, run **Developer: Reload Window**, start the recorded process again,
+wait for breakpoint scanning to complete, and press `F5`. You can also run
+**Debug: Continue** from the Command Palette.
 
 ### 7. Inspect the historical runtime state
 
@@ -322,6 +415,23 @@ report, not a different rerun.
 
 Use **Continue**, **Step Over**, **Step Into**, **Step Out**, **Call Stack**,
 **Scopes**, and **Locals** as with a normal VS Code Python debugging session.
+
+## Run A New Incident
+
+To generate a new live batch, recording, and report:
+
+1. Stop the current VS Code debugging session.
+2. Return to a host terminal in the repository.
+3. Run:
+
+   ```bash
+   make run
+   ```
+
+The generated artifacts from the previous run are replaced. The new batch,
+order, and customer values should differ, while replay and the AI report must
+preserve the new values exactly. Do not run `make clean` before opening the new
+recording in VS Code.
 
 ## Reviewed Example
 
