@@ -1,6 +1,6 @@
 # ZeroDivisionError in Revenue Calculation
 
-> Presentation rendering of the structured Retrace AI findings. No diagnostic claims have been added or rewritten.
+> Bug report rendered from structured Retrace AI findings. No diagnostic claims have been added or rewritten.
 
 ## Summary
 

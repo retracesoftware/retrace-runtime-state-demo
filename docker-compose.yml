@@ -18,6 +18,7 @@ services:
     cpus: 0.50
 
   demo:
+    platform: linux/amd64
     build:
       context: .
       args:

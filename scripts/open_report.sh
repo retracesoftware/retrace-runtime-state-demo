@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-report=${1:-reports/runtime-incident.presentation.md}
+report=${1:-reports/runtime-bug-report.md}
 
 if [[ ! -s "${report}" ]]; then
     echo "Report is missing or empty: ${report}" >&2

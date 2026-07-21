@@ -24,6 +24,21 @@ def _location(location: dict[str, Any]) -> str:
     return ", ".join(parts)
 
 
+def _verified_runtime_evidence(payload: dict[str, Any]) -> str | None:
+    for entry in reversed(payload.get("transcript") or []):
+        if entry.get("tool") != "get_variables":
+            continue
+        variables = (
+            ((entry.get("result") or {}).get("data") or {}).get("variables") or []
+        )
+        for variable in variables:
+            if variable.get("name") == "runtime_incident_evidence":
+                value = str(variable.get("value", "")).strip("'\"")
+                if value:
+                    return value
+    return None
+
+
 def render(payload: dict[str, Any]) -> str:
     report = payload["report"]
     root_cause = report.get("root_cause") or {}
@@ -32,31 +47,49 @@ def render(payload: dict[str, Any]) -> str:
     lines = [
         f"# {_text(report.get('title'), 'Retrace AI Debug Report')}",
         "",
-        "> Presentation rendering of the structured Retrace AI findings. "
+        "> Bug report rendered from structured Retrace AI findings. "
         "No diagnostic claims have been added or rewritten.",
         "",
         "## Summary",
         "",
         _text(report.get("summary")),
         "",
-        "## Investigation",
-        "",
-        f"- Status: `{_text(report.get('status'), 'unknown')}`",
-        f"- Target: `{_text(report.get('investigation_target'), 'unknown')}`",
-        f"- Failure domain: `{_text(report.get('failure_domain'), 'unknown')}`",
-        f"- Failure category: `{_text(report.get('failure_category'), 'unknown')}`",
-        "",
-        "## Root Cause",
-        "",
-        _text(root_cause.get("claim")),
-        "",
-        f"Confidence: `{_text(root_cause.get('confidence'), 'unknown')}`",
-        "",
-        _text(root_cause.get("why")),
-        "",
-        "## Runtime Evidence",
-        "",
     ]
+
+    verified_runtime_evidence = _verified_runtime_evidence(payload)
+    if verified_runtime_evidence:
+        lines.extend(
+            [
+                "## Verified DAP Runtime State",
+                "",
+                "The debugger read this value directly from the historical Locals scope:",
+                "",
+                f"`{verified_runtime_evidence}`",
+                "",
+            ]
+        )
+
+    lines.extend(
+        [
+            "## Investigation",
+            "",
+            f"- Status: `{_text(report.get('status'), 'unknown')}`",
+            f"- Target: `{_text(report.get('investigation_target'), 'unknown')}`",
+            f"- Failure domain: `{_text(report.get('failure_domain'), 'unknown')}`",
+            f"- Failure category: `{_text(report.get('failure_category'), 'unknown')}`",
+            "",
+            "## Root Cause",
+            "",
+            _text(root_cause.get("claim")),
+            "",
+            f"Confidence: `{_text(root_cause.get('confidence'), 'unknown')}`",
+            "",
+            _text(root_cause.get("why")),
+            "",
+            "## Runtime Evidence",
+            "",
+        ]
+    )
 
     evidence = report.get("evidence") or []
     if not evidence:
@@ -106,7 +139,7 @@ def render(payload: dict[str, Any]) -> str:
     for item in files:
         # Model-proposed line numbers are advisory and may not refer to an
         # inspected source line. Keep the file and proposed change in the
-        # presentation; the untouched structured JSON preserves every field.
+        # bug report; the untouched structured JSON preserves every field.
         path = _text(item.get("path"), "unknown path")
         lines.append(f"- `{path}`: {_text(item.get('change'))}")
     if not files:
@@ -140,7 +173,7 @@ def render(payload: dict[str, Any]) -> str:
 def main() -> int:
     if len(sys.argv) != 3:
         print(
-            "usage: render_presentation_report.py INPUT.json OUTPUT.md",
+            "usage: render_bug_report.py INPUT.json OUTPUT.md",
             file=sys.stderr,
         )
         return 2
@@ -154,7 +187,7 @@ def main() -> int:
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(render(payload))
-    print(f"Rendered presentation report: {output_path}")
+    print(f"Rendered bug report: {output_path}")
     return 0
 
 

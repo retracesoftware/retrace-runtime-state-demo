@@ -29,7 +29,7 @@ for run in $(seq 1 "${runs}"); do
     printf '%s\n' "${status}" > "${scratch}/${label}/exit-status.txt"
     for artifact in \
         runtime-incident.ai-report.md \
-        runtime-incident.presentation.md \
+        runtime-bug-report.md \
         runtime-payload.json \
         demo-terminal.log \
         replay-terminal.log; do

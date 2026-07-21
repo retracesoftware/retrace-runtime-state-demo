@@ -2,9 +2,9 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Retrace: verify runtime-state recording",
+      "label": "Retrace: verify fresh runtime recording",
       "type": "shell",
-      "command": "python /app/scripts/verify_debugger.py --all",
+      "command": "python /app/scripts/verify_debugger.py --recording /app/recordings/runtime-incident.retrace",
       "problemMatcher": []
     }
   ]

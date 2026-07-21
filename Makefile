@@ -1,4 +1,4 @@
-.PHONY: preflight prepare convention build demo report example-report replay shell clean stress debugger-build debugger-verify debugger-clean
+.PHONY: preflight setup build run report example-report replay shell clean stress debugger-build debugger-verify debugger-verify-example debugger-clean
 
 preflight:
 	./scripts/preflight_host.sh
@@ -6,22 +6,20 @@ preflight:
 build: preflight
 	docker compose build
 
-prepare: preflight
+setup: preflight
 	docker compose pull incident-api
 	docker compose build
 	docker compose up -d incident-api
 
-demo: preflight
-	docker compose run --build --rm demo /app/scripts/run_demo.sh
-
-convention: demo
-	./scripts/open_report.sh reports/runtime-incident.presentation.md
+run: setup
+	docker compose run --rm demo /app/scripts/run_demo.sh
+	./scripts/open_report.sh reports/runtime-bug-report.md
 
 report:
-	./scripts/open_report.sh reports/runtime-incident.presentation.md
+	./scripts/open_report.sh reports/runtime-bug-report.md
 
 example-report:
-	./scripts/open_report.sh example-reports/runtime-incident.presentation.md
+	./scripts/open_report.sh example-reports/runtime-bug-report.md
 
 replay:
 	docker compose run --rm --no-deps demo /app/scripts/replay_trace.sh
@@ -40,6 +38,9 @@ debugger-build:
 	docker compose -p retrace-runtime-state-debugger -f .devcontainer/docker-compose.yml build
 
 debugger-verify: debugger-build
+	docker compose -p retrace-runtime-state-debugger -f .devcontainer/docker-compose.yml run --rm demo python /app/scripts/verify_debugger.py --recording /app/recordings/runtime-incident.retrace
+
+debugger-verify-example: debugger-build
 	docker compose -p retrace-runtime-state-debugger -f .devcontainer/docker-compose.yml run --rm demo python /app/scripts/verify_debugger.py --all
 
 debugger-clean:

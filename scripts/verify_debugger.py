@@ -48,18 +48,50 @@ def environment_check() -> None:
     if versions.count("Version: 0.2.25") != 2:
         raise AssertionError(f"unexpected Retrace package versions:\n{versions}")
 
-    for demo in DEMOS.values():
-        recording = demo["recording"]
-        source = demo["source"]
-        if not recording.is_file() or recording.stat().st_size == 0:
-            raise AssertionError(f"missing recording: {recording}")
-        if not source.is_file():
-            raise AssertionError(f"missing source: {source}")
-        binary = Path(replay_binary(recording))
-        if not binary.is_file() or not os.access(binary, os.X_OK):
-            raise AssertionError(f"recording replay binary is unavailable: {binary}")
-
     print("environment=pass python=3.12.13 retracesoftware=0.2.25 dap=0.2.25")
+
+
+def recording_check(demo: dict[str, Any]) -> None:
+    recording = demo["recording"]
+    source = demo["source"]
+    if not recording.is_file() or recording.stat().st_size == 0:
+        raise AssertionError(
+            f"missing recording: {recording}\nRun 'make run' on the host first."
+        )
+    if not source.is_file():
+        raise AssertionError(f"missing source: {source}")
+    binary = Path(replay_binary(recording))
+    if not binary.is_file() or not os.access(binary, os.X_OK):
+        raise AssertionError(f"recording replay binary is unavailable: {binary}")
+
+
+def live_demo(recording: Path) -> dict[str, Any]:
+    demo = dict(DEMOS["runtime-state"])
+    demo["recording"] = recording
+    payload_path = ROOT / "reports" / "runtime-payload.json"
+    if not payload_path.is_file():
+        raise AssertionError(
+            f"missing runtime payload: {payload_path}\nRun 'make run' on the host first."
+        )
+    payload = json.loads(payload_path.read_text())
+    order = next(
+        item
+        for item in payload["orders"]
+        if int(item["shipped_units"]) == int(item["returned_units"])
+    )
+    retained_units = int(order["shipped_units"]) - int(order["returned_units"])
+    net_revenue_cents = int(order["gross_revenue_cents"]) - int(
+        order["refunded_revenue_cents"]
+    )
+    demo["expected_values"] = {
+        "retained_units": str(retained_units),
+        "net_revenue_cents": str(net_revenue_cents),
+        "runtime_incident_evidence": (
+            f"batch_id={payload['batch_id']} order_id={order['order_id']} "
+            f"customer_id={order['customer_id']}"
+        ),
+    }
+    return demo
 
 
 class DAPClient:
@@ -272,10 +304,23 @@ def dap_replay(name: str, demo: dict[str, Any]) -> None:
         missing = set(demo["locals"]) - names
         if missing:
             raise AssertionError(f"missing useful locals {sorted(missing)}; found {sorted(names)}")
+
+        by_name = {str(item.get("name")): str(item.get("value")) for item in variables}
+        for variable, expected in (demo.get("expected_values") or {}).items():
+            observed = by_name.get(variable, "")
+            if expected not in observed:
+                raise AssertionError(
+                    f"fresh recording local mismatch for {variable}: "
+                    f"expected {expected!r} in {observed!r}"
+                )
     finally:
         client.close()
 
-    print(f"demo={name} direct_replay=pass breakpoint=pass stack=pass scopes=pass locals=pass")
+    suffix = " exact_runtime_values=pass" if demo.get("expected_values") else ""
+    print(
+        f"demo={name} direct_replay=pass breakpoint=pass stack=pass "
+        f"scopes=pass locals=pass{suffix}"
+    )
 
 
 def main() -> None:
@@ -284,15 +329,21 @@ def main() -> None:
     group.add_argument("--environment", action="store_true")
     group.add_argument("--all", action="store_true")
     group.add_argument("--demo", choices=sorted(DEMOS))
+    group.add_argument("--recording", type=Path)
     args = parser.parse_args()
 
     environment_check()
     if args.environment:
         return
 
-    names = list(DEMOS) if args.all else [args.demo]
-    for name in names:
-        demo = DEMOS[name]
+    if args.recording:
+        selected = [("runtime-state-live", live_demo(args.recording.resolve()))]
+    else:
+        names = list(DEMOS) if args.all else [args.demo]
+        selected = [(name, DEMOS[name]) for name in names]
+
+    for name, demo in selected:
+        recording_check(demo)
         direct_replay(demo["recording"], demo["replay_text"])
         shutil.rmtree(demo["recording"].with_suffix(".d"), ignore_errors=True)
         dap_replay(name, demo)

@@ -4,7 +4,7 @@
   "service": "demo",
   "workspaceFolder": "/app",
   "shutdownAction": "stopCompose",
-  "postCreateCommand": "chmod +x /app/debug-recording/*.retrace && python /app/scripts/verify_debugger.py --environment",
+  "postCreateCommand": "if [ -f /app/recordings/runtime-incident.retrace ]; then chmod +x /app/recordings/runtime-incident.retrace; fi && python /app/scripts/verify_debugger.py --environment",
   "hostRequirements": {
     "cpus": 2,
     "memory": "4gb",
