@@ -11,6 +11,14 @@ def require_any(text: str, label: str, values: tuple[str, ...], failures: list[s
         failures.append(f"missing {label}: expected one of {values}")
 
 
+def normalize_artifact(document: dict) -> dict:
+    if isinstance(document.get("report"), dict):
+        return document
+    if "status" in document and "title" in document:
+        return {"report": document, "transcript": []}
+    raise ValueError("structured AI report is missing report object")
+
+
 def main() -> int:
     if len(sys.argv) != 4:
         print(
@@ -24,7 +32,7 @@ def main() -> int:
     ai_report_path = Path(sys.argv[3])
     report = report_path.read_text().lower()
     payload = json.loads(payload_path.read_text())
-    artifact = json.loads(ai_report_path.read_text())
+    artifact = normalize_artifact(json.loads(ai_report_path.read_text()))
     ai_report = artifact["report"]
     transcript = json.dumps(artifact.get("transcript") or []).lower()
     bad_order = next(
@@ -81,6 +89,12 @@ def main() -> int:
         ),
         failures,
     )
+    require_any(
+        suggested_text,
+        "domain-safe undefined-metric handling",
+        ("skip", "not applicable", "none", "null"),
+        failures,
+    )
     if re.search(r"\breturn(?:ing)?\s+(?:a\s+)?(?:numeric\s+)?0\b", suggested_text):
         if not any(phrase in suggested_text for phrase in ("do not", "avoid", "unless")):
             failures.append(
@@ -92,6 +106,8 @@ def main() -> int:
         for value in (
             ai_report.get("summary"),
             (ai_report.get("root_cause") or {}).get("claim"),
+            (ai_report.get("root_cause") or {}).get("defect"),
+            (ai_report.get("root_cause") or {}).get("trigger"),
             (ai_report.get("root_cause") or {}).get("why"),
         )
     ).lower()
@@ -121,7 +137,7 @@ def main() -> int:
         failures.append(f"suggested fix cites unknown source path(s): {invented_paths}")
 
     for item in ai_report.get("evidence") or []:
-        location = item.get("location") or {}
+        location = item.get("coordinate") or item.get("location") or {}
         if str(location.get("path", "")).endswith("/app/order_metrics.py"):
             if location.get("line") not in (None, 25):
                 failures.append(

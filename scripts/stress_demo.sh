@@ -1,7 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-runs=${1:-5}
+if [[ "${RETRACE_RUN_LIVE_AI_HARNESS:-0}" != "1" ]]; then
+    echo "Live AI harness is disabled by default." >&2
+    echo "Use 'make live-ai-harness' to opt in to a bounded live run." >&2
+    exit 2
+fi
+
+runs=${1:-1}
+if [[ ! "${runs}" =~ ^[1-5]$ ]]; then
+    echo "Run count must be an integer from 1 to 5." >&2
+    exit 2
+fi
+
+export RETRACE_AI_CORRECTION_ATTEMPTS=${RETRACE_AI_CORRECTION_ATTEMPTS:-0}
 archive=/app/reports/stress
 scratch=/tmp/retrace-runtime-demo-stress
 
