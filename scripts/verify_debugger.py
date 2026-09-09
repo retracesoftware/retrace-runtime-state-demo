@@ -45,10 +45,10 @@ def environment_check() -> None:
         text=True,
         stdout=subprocess.PIPE,
     ).stdout
-    if versions.count("Version: 0.2.25") != 2:
+    if versions.count("Version: 0.2.30") != 2:
         raise AssertionError(f"unexpected Retrace package versions:\n{versions}")
 
-    print("environment=pass python=3.12.13 retracesoftware=0.2.25 dap=0.2.25")
+    print("environment=pass python=3.12.13 retracesoftware=0.2.30 dap=0.2.30")
 
 
 def recording_check(demo: dict[str, Any]) -> None:

@@ -22,7 +22,7 @@ services:
     build:
       context: .
       args:
-        RETRACE_VERSION: ${RETRACE_VERSION:-0.2.25}
+        RETRACE_VERSION: ${RETRACE_VERSION:-0.2.30}
     depends_on:
       incident-api:
         condition: service_healthy

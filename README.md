@@ -132,8 +132,8 @@ That is the complete quick start. It performs setup and then runs the demo.
 1. Verify that Docker and Docker Compose are available.
 2. Pull the Python image used by the incident API.
 3. Build the Python 3.12.13 Linux/amd64 demo image.
-4. Install `retracesoftware==0.2.25` from PyPI. Its
-   `retracesoftware-dap==0.2.25` dependency is installed automatically.
+4. Install `retracesoftware==0.2.30` from PyPI. Its
+   `retracesoftware-dap==0.2.30` dependency is installed automatically.
 5. Start the incident API and wait for its health check.
 
 It then:
@@ -517,8 +517,8 @@ Both the recording and VS Code debugging containers use the same environment:
 Linux amd64
 Python 3.12.13
 pytest 8.4.2
-retracesoftware 0.2.25
-retracesoftware-dap 0.2.25
+retracesoftware 0.2.30
+retracesoftware-dap 0.2.30
 ```
 
 ## License
