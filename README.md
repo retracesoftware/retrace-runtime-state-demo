@@ -111,7 +111,7 @@ RETRACE_API_KEY=... make live-ai-harness
 ```
 
 Set `LIVE_AI_RUNS` to a value from 1 through 5 only when repeated live evidence
-is genuinely required. The manual/nightly GitHub workflow always runs once,
+is genuinely required. The manually dispatched GitHub workflow always runs once,
 requires the repository `RETRACE_API_KEY` secret, disables anonymous access,
 and disables the automatic correction attempt.
 
@@ -166,7 +166,7 @@ This correction pass does not rerun pytest and does not contact the incident
 API. Only an evidence-consistent report is presented as successful.
 
 Set `RETRACE_AI_CORRECTION_ATTEMPTS=0` to fail immediately instead of making
-that second model request. The manual/nightly harness uses this setting.
+that second model request. The manual harness uses this setting.
 
 `make setup` may also be run separately when you want to prepare the images
 and API before presenting:
