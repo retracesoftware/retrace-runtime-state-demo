@@ -29,7 +29,7 @@ jobs:
           rm -f recordings/runtime-incident.retrace
           set +e
           docker compose run --rm --no-deps demo \
-            sh -lc 'unset RETRACE_AUTO_DEBUG; cd /app; retracepython --recording /app/recordings/runtime-incident.retrace -m pytest -vs tests'
+            sh -lc 'unset RETRACE_AUTO_DEBUG; cd /app; retracepython --recording /app/recordings/runtime-incident.retrace -m pytest -vs tests/test_order_metrics.py'
           status=$?
           set -e
           test "${status}" -eq 1

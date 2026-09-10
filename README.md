@@ -145,7 +145,7 @@ It then:
    ```bash
    RETRACE_AUTO_DEBUG=1 \
    retracepython --recording /app/recordings/runtime-incident.retrace \
-     -m pytest -vs tests
+     -m pytest -vs tests/test_order_metrics.py
    ```
 
 4. Records the API response and expected pytest failure.

@@ -52,10 +52,10 @@ verify that replay did not call the live API again.
 EOF
 
 echo "Running the real pytest command through Retrace:"
-echo "RETRACE_AUTO_DEBUG=1 retracepython --recording ${RECORDING} -m pytest -vs tests"
+echo "RETRACE_AUTO_DEBUG=1 retracepython --recording ${RECORDING} -m pytest -vs tests/test_order_metrics.py"
 
 set +e
-retracepython --recording "${RECORDING}" -m pytest -vs tests 2>&1 \
+retracepython --recording "${RECORDING}" -m pytest -vs tests/test_order_metrics.py 2>&1 \
     | tee "${REPORTS_DIR}/demo-terminal.log"
 status=${PIPESTATUS[0]}
 set -e
