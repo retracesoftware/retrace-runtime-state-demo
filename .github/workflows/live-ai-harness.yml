@@ -1,0 +1,45 @@
+name: Live AI report harness
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: live-ai-report-harness
+  cancel-in-progress: false
+
+jobs:
+  live-ai-report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      RETRACE_API_KEY: ${{ secrets.RETRACE_API_KEY }}
+      ALLOW_FREE_RETRACE_AI: "0"
+      RETRACE_AI_MAX_TOOL_CALLS: "70"
+      RETRACE_AI_TIME_BUDGET: "240"
+      RETRACE_AI_MAX_OUTPUT_TOKENS: "8192"
+      RETRACE_AI_CORRECTION_ATTEMPTS: "0"
+      LIVE_AI_RUNS: "1"
+    steps:
+      - name: Require the metered harness credential
+        run: |
+          if [ -z "${RETRACE_API_KEY}" ]; then
+            echo "Configure the RETRACE_API_KEY repository secret before running the live harness." >&2
+            exit 1
+          fi
+      - uses: actions/checkout@v4
+      - name: Run one bounded live investigation
+        run: make live-ai-harness
+      - name: Upload investigation artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-ai-report-${{ github.run_id }}
+          path: reports/stress/
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Clean up
+        if: always()
+        run: docker compose down -v --remove-orphans

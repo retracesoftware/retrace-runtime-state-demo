@@ -9,6 +9,12 @@ REPORT_JSON=${RECORDINGS_DIR}/runtime-incident.ai-report.json
 REPORT_MD=${RECORDINGS_DIR}/runtime-incident.ai-report.md
 PAYLOAD=${STATE_DIR}/latest-payload.json
 REQUEST_COUNT=${STATE_DIR}/request-count.txt
+CORRECTION_ATTEMPTS=${RETRACE_AI_CORRECTION_ATTEMPTS:-1}
+
+if [[ "${CORRECTION_ATTEMPTS}" != "0" && "${CORRECTION_ATTEMPTS}" != "1" ]]; then
+    echo "ERROR: RETRACE_AI_CORRECTION_ATTEMPTS must be 0 or 1." >&2
+    exit 2
+fi
 
 cd /app
 python /app/scripts/wait_for_api.py
@@ -92,6 +98,10 @@ render_and_validate() {
 }
 
 if ! render_and_validate; then
+    if [[ "${CORRECTION_ATTEMPTS}" == "0" ]]; then
+        echo "Initial AI report failed validation; correction is disabled for this run." >&2
+        exit 1
+    fi
     echo "Initial AI summary did not meet the runtime-evidence quality gate."
     echo "Re-investigating the same recording once; pytest and the live API are not rerun."
     INITIAL_REPORT=/tmp/runtime-incident.initial-ai-report.json
@@ -110,7 +120,7 @@ if ! render_and_validate; then
         --task "${RETRACE_AI_CORRECTION_TASK} The quality gate verified this exact runtime_incident_evidence in the prior DAP transcript: '${VERIFIED_RUNTIME_EVIDENCE}'. Re-read and preserve it verbatim; changing any identifier or number is invalid." \
         --max-tool-calls "${RETRACE_AI_MAX_TOOL_CALLS:-70}" \
         --time-budget "${RETRACE_AI_TIME_BUDGET:-240}" \
-        --max-output-tokens "${RETRACE_AI_MAX_OUTPUT_TOKENS:-2600}"
+        --max-output-tokens "${RETRACE_AI_MAX_OUTPUT_TOKENS:-8192}"
     python /app/scripts/merge_ai_correction.py \
         "${INITIAL_REPORT}" \
         "${CORRECTED_REPORT}" \

@@ -83,6 +83,38 @@ On branch main
 nothing to commit, working tree clean
 ```
 
+## Validation Modes And Model Usage
+
+Routine development checks do not contact a language model:
+
+```bash
+make test
+make debugger-verify-example
+```
+
+`make test` validates the structured-report renderer and report quality gate
+using local fixtures. `make debugger-verify-example` uses the checked-in
+recording to validate replay and DAP behavior. Both are repeatable and consume
+no hosted-model quota.
+
+`make run` is the intentional live demo described below. It records a fresh
+incident and requests a hosted AI investigation. The normal interactive flow
+may request one correction of the same recording if the first report fails the
+quality gate.
+
+The repeated live-model harness is not part of push or pull-request testing.
+The old `make stress` shortcut is disabled to prevent accidental five-run
+model use. Maintainers can explicitly request one bounded live run with:
+
+```bash
+RETRACE_API_KEY=... make live-ai-harness
+```
+
+Set `LIVE_AI_RUNS` to a value from 1 through 5 only when repeated live evidence
+is genuinely required. The manually dispatched GitHub workflow always runs once,
+requires the repository `RETRACE_API_KEY` secret, disables anonymous access,
+and disables the automatic correction attempt.
+
 ## Part 1: Generate A Fresh Trace And AI Bug Report
 
 Run:
@@ -100,8 +132,8 @@ That is the complete quick start. It performs setup and then runs the demo.
 1. Verify that Docker and Docker Compose are available.
 2. Pull the Python image used by the incident API.
 3. Build the Python 3.12.13 Linux/amd64 demo image.
-4. Install `retracesoftware==0.2.25` from PyPI. Its
-   `retracesoftware-dap==0.2.25` dependency is installed automatically.
+4. Install `retracesoftware==0.2.30` from PyPI. Its
+   `retracesoftware-dap==0.2.30` dependency is installed automatically.
 5. Start the incident API and wait for its health check.
 
 It then:
@@ -128,9 +160,13 @@ It then:
    recommendation.
 
 If the model's first summary does not match the evidence it collected, the
-quality gate asks the AI debugger to reinvestigate the same recording once.
+interactive `make run` quality gate asks the AI debugger to reinvestigate the
+same recording once.
 This correction pass does not rerun pytest and does not contact the incident
 API. Only an evidence-consistent report is presented as successful.
+
+Set `RETRACE_AI_CORRECTION_ATTEMPTS=0` to fail immediately instead of making
+that second model request. The manual harness uses this setting.
 
 `make setup` may also be run separately when you want to prepare the images
 and API before presenting:
@@ -248,6 +284,12 @@ A successful report identifies:
 
 It should not silently recommend numeric zero unless the application owner has
 defined that business meaning.
+
+The readable report also separates the observed symptom, immediate mechanism,
+triggering runtime input, application defect, evidence-backed causal chain,
+and the runtime fact uniquely established by the recording. Any degraded
+debugger capabilities or unresolved causal links are shown explicitly, along
+with the focused regression condition that should accompany the fix.
 
 To verify manually that the report describes this exact run, display the
 captured payload and the report's verified debugger evidence:
@@ -367,9 +409,9 @@ In VS Code:
 2. Find the recorded Python process, shown as `python (PID ...)`.
 3. Click play beside that process.
 4. Wait for breakpoint scanning to complete.
-5. Retrace first pauses at an entry stop. Press `F5` or **Continue** once. Do
-   not use Step Into until the source breakpoint has been reached.
-6. Replay stops at the breakpoint on line 31.
+5. Replay stops directly at the breakpoint on line 31. Do not press
+   **Continue** first; with no later breakpoint, that would run to the end of
+   the recording.
 
 The Debug Console should show messages similar to:
 
@@ -379,12 +421,9 @@ handleContinue: cursor=false ...
 handleContinue: ok=true hitMsgIdx=...
 ```
 
-An initial `stackTrace: no active cursor` message means replay has not moved
-from the entry stop to an inspectable historical position yet. If pressing
-Continue produces no `handleContinue` message, stop the debug session with
-`Shift+F5`, run **Developer: Reload Window**, start the recorded process again,
-wait for breakpoint scanning to complete, and press `F5`. You can also run
-**Debug: Continue** from the Command Palette.
+`configurationDone` starts replay and materializes the first real stop. The
+Debugger recording smoke test verifies that this stop is immediately
+inspectable through stack, scopes, and locals requests.
 
 ### 7. Inspect the historical runtime state
 
@@ -475,8 +514,8 @@ Both the recording and VS Code debugging containers use the same environment:
 Linux amd64
 Python 3.12.13
 pytest 8.4.2
-retracesoftware 0.2.25
-retracesoftware-dap 0.2.25
+retracesoftware 0.2.30
+retracesoftware-dap 0.2.30
 ```
 
 ## License

@@ -1,4 +1,6 @@
-.PHONY: preflight setup build run report example-report replay shell clean stress debugger-build debugger-verify debugger-verify-example debugger-clean
+.PHONY: preflight setup build run report example-report replay shell clean test stress require-live-ai-key live-ai-harness debugger-build debugger-verify debugger-verify-example debugger-clean
+
+LIVE_AI_RUNS ?= 1
 
 preflight:
 	./scripts/preflight_host.sh
@@ -31,8 +33,22 @@ clean:
 	docker compose down -v --remove-orphans
 	rm -rf recordings/* reports/* runtime-state/*
 
+test:
+	python3 -m unittest discover -s tests -p 'test_report_tools.py' -v
+
 stress:
-	docker compose run --rm demo /app/scripts/stress_demo.sh 5
+	@echo "The quota-consuming stress target is disabled by default."
+	@echo "Run 'make live-ai-harness LIVE_AI_RUNS=1' for an explicit bounded check."
+	@false
+
+require-live-ai-key:
+	@test -n "$(RETRACE_API_KEY)" || (echo "RETRACE_API_KEY is required for the live harness." >&2; exit 2)
+
+live-ai-harness: require-live-ai-key setup
+	ALLOW_FREE_RETRACE_AI=0 docker compose run --rm \
+		-e RETRACE_RUN_LIVE_AI_HARNESS=1 \
+		-e RETRACE_AI_CORRECTION_ATTEMPTS=0 \
+		demo /app/scripts/stress_demo.sh "$(LIVE_AI_RUNS)"
 
 debugger-build:
 	docker compose -p retrace-runtime-state-debugger -f .devcontainer/docker-compose.yml build
