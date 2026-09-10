@@ -274,8 +274,6 @@ def dap_replay(name: str, demo: dict[str, Any]) -> None:
             raise AssertionError(f"unverified breakpoint: {breakpoint_response}")
 
         client.send("configurationDone")
-        client.stopped("entry")
-        client.send("continue", {"threadId": 1})
         client.stopped("breakpoint", timeout=90)
 
         client.send("stackTrace", {"threadId": 1})

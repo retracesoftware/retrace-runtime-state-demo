@@ -409,9 +409,9 @@ In VS Code:
 2. Find the recorded Python process, shown as `python (PID ...)`.
 3. Click play beside that process.
 4. Wait for breakpoint scanning to complete.
-5. Retrace first pauses at an entry stop. Press `F5` or **Continue** once. Do
-   not use Step Into until the source breakpoint has been reached.
-6. Replay stops at the breakpoint on line 31.
+5. Replay stops directly at the breakpoint on line 31. Do not press
+   **Continue** first; with no later breakpoint, that would run to the end of
+   the recording.
 
 The Debug Console should show messages similar to:
 
@@ -421,12 +421,9 @@ handleContinue: cursor=false ...
 handleContinue: ok=true hitMsgIdx=...
 ```
 
-An initial `stackTrace: no active cursor` message means replay has not moved
-from the entry stop to an inspectable historical position yet. If pressing
-Continue produces no `handleContinue` message, stop the debug session with
-`Shift+F5`, run **Developer: Reload Window**, start the recorded process again,
-wait for breakpoint scanning to complete, and press `F5`. You can also run
-**Debug: Continue** from the Command Palette.
+`configurationDone` starts replay and materializes the first real stop. The
+Debugger recording smoke test verifies that this stop is immediately
+inspectable through stack, scopes, and locals requests.
 
 ### 7. Inspect the historical runtime state
 
